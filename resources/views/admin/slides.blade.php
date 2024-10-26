@@ -35,6 +35,9 @@
                         class="icon-plus"></i>Add new</a>
             </div>
             <div class="wg-table table-all-user">
+                @if(Session::has('status'))
+                    <p class="alert alert-success">{{Session::get('status')}}</p>
+                @endif
                 <table class="table table-striped table-bordered">
                     <thead>
                     <tr>
@@ -62,12 +65,14 @@
                         <td>{{$slide->link}}</td>
                         <td>
                             <div class="list-icon-function">
-                                <a href="">
+                                <a href="{{route('admin.slide.edit',['id'=>$slide->id])}}">
                                     <div class="item edit">
                                         <i class="icon-edit-3"></i>
                                     </div>
                                 </a>
-                                <form action="" method="POST">
+                                <form action="{{route('admin.slide.delete',['id'=>$slide->id])}}" method="POST">
+                                    @csrf
+                                    @method('delete')
                                     <div class="item text-danger delete">
                                         <i class="icon-trash-2"></i>
                                     </div>
@@ -86,3 +91,24 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        $(function(){
+            $(".delete").on('click',function(e){
+                e.preventDefault();
+                var selectedForm = $(this).closest('form');
+                swal({
+                    title: "Are you sure?",
+                    text: "You want to delete this record?",
+                    type: "warning",
+                    buttons: ["No!", "Yes!"],
+                    confirmButtonColor: '#dc3545'
+                }).then(function (result) {
+                    if (result) {
+                        selectedForm.submit();
+                    }
+                });
+            });
+        });
+    </script>
+@endpush

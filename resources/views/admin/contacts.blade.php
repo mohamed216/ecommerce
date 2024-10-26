@@ -12,7 +12,7 @@
     <div class="main-content-inner">
         <div class="main-content-wrap">
             <div class="flex items-center flex-wrap justify-between gap20 mb-27">
-                <h3>Coupons</h3>
+                <h3>All Message</h3>
                 <ul class="breadcrumbs flex items-center flex-wrap justify-start gap10">
                     <li>
                         <a href="{{route('admin.index')}}">
@@ -23,7 +23,7 @@
                         <i class="icon-chevron-right"></i>
                     </li>
                     <li>
-                        <div class="text-tiny">All Coupons</div>
+                        <div class="text-tiny">All Message</div>
                     </li>
                 </ul>
             </div>
@@ -51,31 +51,27 @@
                             <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Code</th>
-                                <th>Type</th>
-                                <th>Value</th>
-                                <th>Cart Value</th>
-                                <th>Expiry Date</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Message</th>
+                                <th>Date</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
                             <tbody>
-                            @foreach ($coupons as $coupon)
+                            @foreach ($contacts as $contact)
                                 <tr>
-                                    <td>{{$coupon->id}}</td>
-                                    <td>{{$coupon->code}}</td>
-                                    <td>{{$coupon->type}}</td>
-                                    <td>{{$coupon->value}}</td>
-                                    <td>SAR {{$coupon->cart_value}}</td>
-                                    <td>{{$coupon->expiry_date}}</td>
+                                    <td>{{$contact->id}}</td>
+                                    <td>{{$contact->name}}</td>
+                                    <td>{{$contact->email}}</td>
+                                    <td>{{$contact->phone}}</td>
+                                    <td>{{$contact->comment}}</td>
+                                    <td>{{$contact->created_at}}</td>
                                     <td>
                                         <div class="list-icon-function">
-                                            <a href="{{route('admin.coupon.edit',['id'=>$coupon->id])}}">
-                                                <div class="item edit">
-                                                    <i class="icon-edit-3"></i>
-                                                </div>
-                                            </a>
-                                            <form action="{{route('admin.coupon.delete',['id'=>$coupon->id])}}" method="POST">
+
+                                            <form action="{{route('admin.contact.delete',['id'=>$contact->id])}}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <div class="item text-danger delete">
@@ -93,7 +89,7 @@
                 </div>
                 <div class="divider"></div>
                 <div class="flex items-center justify-between flex-wrap gap10 wgp-pagination">
-                    {{$coupons->links('pagination::bootstrap-5')}}
+                    {{$contacts->links('pagination::bootstrap-5')}}
                 </div>
             </div>
         </div>

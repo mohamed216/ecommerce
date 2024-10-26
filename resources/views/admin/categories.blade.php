@@ -70,7 +70,7 @@
                                     </div>
                                 </td>
                                 <td>{{$category->slug}}</td>
-{{--                                <td><a href="{{route('admin.category.products',['category_slug'=>$category->slug])}}" target="_blank">{{$category->products()->count()}}</a></td>--}}
+                                <td><a href="{{route('admin.category.products',['category_slug'=>$category->slug])}}" target="_blank">{{$category->products()->count()}}</a></td>
                                 <td>
                                     <div class="list-icon-function">
                                         <a href="{{route('admin.category.edit',['id'=>$category->id])}}">

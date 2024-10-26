@@ -184,7 +184,8 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="select">
-                                <select id="order_status" name="order_status">
+                                <select id="order_status" name="order_status"
+                                    {{ $transaction->order->status == 'delivered' ? 'disabled' : '' }}>
                                     <option value="ordered" {{$transaction->order->status=="ordered" ? "selected":""}}>Ordered</option>
                                     <option value="delivered" {{$transaction->order->status=="delivered" ? "selected":""}}>Delivered</option>
                                     <option value="canceled" {{$transaction->order->status=="canceled" ? "selected":""}}>Canceled</option>
@@ -192,9 +193,15 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary tf-button w208">Update</button>
+                            <button type="submit" class="btn btn-primary tf-button w208"
+                                {{ $transaction->order->status == 'delivered' ? 'disabled' : '' }}>
+                                Update
+                            </button>
                         </div>
                     </div>
+                    @if($transaction->order->status == 'delivered')
+                        <p class="text-muted mt-3">This order has already been delivered and can no longer be updated.</p>
+                    @endif
                 </form>
             </div>
         </div>

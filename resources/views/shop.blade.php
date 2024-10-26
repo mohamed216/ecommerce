@@ -369,7 +369,7 @@
                                     <div class="product-card__price d-flex">
                     <span class="money price">
                         @if($product->sale_price)
-                            <s>SAR{{$product->regular_price}}</s> SAR {{$product->sale_price}} {{round(($product->regular_price - $product->sale_price)*100/$product->regular_price)}} % OFF
+                            <s>SAR {{$product->regular_price}}</s> SAR {{$product->sale_price}}
                         @else
                             {{$product->regular_price}}
                         @endif

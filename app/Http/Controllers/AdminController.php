@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Contact;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -12,6 +13,7 @@ use App\Models\Slide;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Intervention\Image\Laravel\Facades\Image;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -22,7 +24,42 @@ class AdminController extends Controller
 {
     public function index()
     {
-        return view("admin.dashboard");
+        $orders = Order::orderBy('created_at','DESC')->get()->take(10);
+        $dashboardDatas = DB::select("select sum(total) as totalamount,
+        sum(if(status='oredered',total,0)) as totalorderedamount,
+        sum(if(status='delivered',total,0)) as totaldeliveredamount,
+        sum(if(status='canceled',total,0)) as totalcanceledamount,
+        count(*) as total,
+        sum(if(status='oredered',1,0)) as totalordered,
+        sum(if(status='delivered',1,0)) as totaldelivered,
+        sum(if(status='canceled',1,0)) as totalcanceled
+        From orders
+        ");
+        $monthlyDatas = DB::select("select m.id as monthno, m.name as monthname,
+        ifnull(d.totalamount,0) as totalamount,
+        ifnull(d.totalorderedamount,0) as totalorderedamount,
+        ifnull(d.totaldeliveredamount,0) as totaldeliveredamount,
+        ifnull(d.totalcanceledamount,0) as totalcanceledamount from month_names m
+        left join (select date_format(created_at, '%b') as monthname,
+                          month(created_at) as monthno,
+                       sum(total) as totalamount,
+                       sum(if(status='ordered',total,0)) as totalorderedamount,
+                       sum(if(status='delivered',total,0)) as totaldeliveredamount,
+                       sum(if(status='canceled',total,0)) as totalcanceledamount
+                   from orders where year(created_at)=year(now()) group by year(created_at), month(created_at), date_format(created_at, '%b')
+                                                                 order by month(created_at)) d on d.monthno=m.id
+        ");
+
+        $AmountM = implode(',', collect($monthlyDatas)->pluck('totalamount')->toArray());
+        $orderedAmountM = implode(',', collect($monthlyDatas)->pluck('totalorderedamount')->toArray());
+        $DeliveredAmountM = implode(',', collect($monthlyDatas)->pluck('totaldeliveredamount')->toArray());
+        $CanceledAmountM = implode(',', collect($monthlyDatas)->pluck('totalcanceledamount')->toArray());
+
+        $TotalAmount = collect($monthlyDatas)->sum('totalamount');
+        $TotalOrderedAmount = collect($monthlyDatas)->sum('totalarderedamount');
+        $TotalDeliveredAmount = collect($monthlyDatas)->sum('totaldeliveredamount');
+        $TotalCanceledAmount = collect($monthlyDatas)->sum('totalcanceledamount');
+        return view("admin.dashboard",compact('orders','dashboardDatas','AmountM','orderedAmountM','DeliveredAmountM','CanceledAmountM','TotalAmount','TotalOrderedAmount','TotalDeliveredAmount','TotalCanceledAmount'));
     }
 
     public function brands()
@@ -59,6 +96,13 @@ class AdminController extends Controller
     {
         $brand = Brand::find($id);
         return view('admin.brand-edit',compact('brand'));
+    }
+
+    public function product_brand($brand_slug)
+    {
+        $brand = Brand::where('slug', $brand_slug)->firstOrFail();
+        $products = $brand->products()->paginate(5); // Display 20 products per page
+        return view('admin.brand-products', compact('brand', 'products'));
     }
 
     public function update_brand(Request $request)
@@ -143,6 +187,14 @@ class AdminController extends Controller
     {
         $category = Category::find($id);
         return view('admin.category-edit',compact('category'));
+    }
+
+    public function catproducts($category_slug)
+    {
+        $category = Category::where('slug', $category_slug)->firstOrFail();
+        $products = $category->products()->paginate(10); // Display 10 products per page
+
+        return view('admin.category-products', compact('category', 'products'));
     }
 
     public function update_category(Request $request)
@@ -562,4 +614,73 @@ class AdminController extends Controller
         })->save($destinationPath.'/'.$imageName);
     }
 
+    public function slide_edit($id)
+    {
+        $slide =Slide::find($id);
+        return view('admin.slide-edit',compact('slide'));
+    }
+
+    public function slide_update(Request $request)
+    {
+        $request->validate([
+            'tagline' => 'required',
+            'title' => 'required',
+            'subtitle' => 'required',
+            'link' => 'required',
+            'status' => 'required',
+            'image' => 'required|mimes:png,,jpg,jpeg|max:2048',
+        ]);
+        $slide = Slide::find($request->id);
+        $slide->tagline = $request->tagline;
+        $slide->title = $request->title;
+        $slide->subtitle = $request->subtitle;
+        $slide->link = $request->link;
+        $slide->status = $request->status;
+
+        if($request->hasFile('image'))
+        {
+            if(File::exists(public_path('uploads/slides').'/'.$slide->image))
+            {
+                File::delete(public_path('uploads/slides').'/'.$slide->image);
+            }
+            $image = $request->file('image');
+            $file_extention = $request->file('image')->extension();
+            $file_name = Carbon::now()->timestamp . '.' . $file_extention;
+            $this->GenerateSlidesThumbailImage($image,$file_name);
+            $slide->image = $file_name;
+        }
+        $slide->save();
+        return redirect()->route('admin.slides')->with("status","Slide updated successfully");
+    }
+
+    public function slide_delete($id)
+    {
+        $slide = Slide::find($id);
+        if(File::exists(public_path('uploads/slides').'/'.$slide->image))
+        {
+            File::delete(public_path('uploads/slides').'/'.$slide->image);
+        }
+        $slide->delete();
+        return redirect()->route('admin.slides')->with("status","Slide deleted successfully");
+    }
+
+    public function contacts()
+    {
+        $contacts = Contact::orderBy('created_at','DESC')->paginate(10);
+        return view('admin.contacts',compact('contacts'));
+    }
+
+    public function contact_delete($id)
+    {
+        $contact = Contact::find($id);
+        $contact->delete();
+        return redirect()->route('admin.contacts')->with("status","Contact deleted successfully");
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $results = product::where('name','LIKE',"%($query)%")->get()->take(8);
+        return response()->json($results);
+    }
 }
